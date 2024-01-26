@@ -21,6 +21,36 @@ var template = require('jsdoc/template'),
         '.gif': 'image/gif'
     };
 
+
+/**
+ * Copied from https://github.com/jsdoc/jsdoc/blob/main/packages/jsdoc/lib/jsdoc/util/templateHelper.js
+ * Modified to call our own `linkto` to shorten names.
+ * @param {Object} doclet The doclet.
+ * @param {Array} [doclet.yields] The returns.
+ * @param {Array} [doclet.returns] The returns.
+ * @param {string} cssClass The css class.
+ * @return {Array} The returns.
+ */
+function getSignatureReturns({yields, returns}, cssClass) {
+    let returnTypes = [];
+  
+    if (yields || returns) {
+      (yields || returns).forEach((r) => {
+        if (r && r.type && r.type.names) {
+          if (!returnTypes.length) {
+            returnTypes = r.type.names;
+          }
+        }
+      });
+    }
+  
+    if (returnTypes && returnTypes.length) {
+      returnTypes = returnTypes.map((r) => linkto(r, '', cssClass));
+    }
+  
+    return returnTypes;
+}
+
 function getShortName(longname) {
     if (!longname.includes('module:')) {
         return longname;
@@ -147,7 +177,7 @@ function addSignatureParams(f) {
 }
 
 function addSignatureReturns(f) {
-    var returnTypes = helper.getSignatureReturns(f);
+    var returnTypes = getSignatureReturns(f);
 
     f.signature = '<span class="signature">' + (f.signature || '') + '</span>';
 
