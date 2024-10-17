@@ -21,7 +21,6 @@ var template = require('jsdoc/template'),
         '.gif': 'image/gif'
     };
 
-
 /**
  * Copied from https://github.com/jsdoc/jsdoc/blob/main/packages/jsdoc/lib/jsdoc/util/templateHelper.js
  * Modified to call our own `linkto` to shorten names.
@@ -31,23 +30,23 @@ var template = require('jsdoc/template'),
  * @param {string} cssClass The css class.
  * @return {Array} The returns.
  */
-function getSignatureReturns({yields, returns}, cssClass) {
+function getSignatureReturns({ yields, returns }, cssClass) {
     let returnTypes = [];
-  
+
     if (yields || returns) {
-      (yields || returns).forEach((r) => {
-        if (r && r.type && r.type.names) {
-          if (!returnTypes.length) {
-            returnTypes = r.type.names;
-          }
-        }
-      });
+        (yields || returns).forEach(r => {
+            if (r && r.type && r.type.names) {
+                if (!returnTypes.length) {
+                    returnTypes = r.type.names;
+                }
+            }
+        });
     }
-  
+
     if (returnTypes && returnTypes.length) {
-      returnTypes = returnTypes.map((r) => linkto(r, '', cssClass));
+        returnTypes = returnTypes.map(r => linkto(r, '', cssClass));
     }
-  
+
     return returnTypes;
 }
 
