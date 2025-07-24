@@ -388,10 +388,6 @@ function buildNav(members, conf) {
         }
     });
     members.modules.forEach(function (v) {
-        const classes = find({
-            kind: 'class',
-            memberof: v.longname
-        });
         const members = find({
             kind: 'member',
             memberof: v.longname
@@ -408,9 +404,10 @@ function buildNav(members, conf) {
             kind: 'event',
             memberof: v.longname
         });
-        // Only add modules that contain more than just classes with their
-        // associated Options typedef
-        if (typedefs.length > classes.length || members.length + methods.length > 0) {
+
+        // Only include modules with at least one symbol.
+        // Classes get their own page, so they don't need to be considered here.
+        if (typedefs.length || members.length || methods.length || events.length) {
             nav.push({
                 type: 'module',
                 longname: v.longname,
