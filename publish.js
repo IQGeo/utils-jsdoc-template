@@ -309,6 +309,36 @@ function attachModuleSymbols(doclets, modules) {
 }
 
 /**
+ * Associates the provided doclets to their corresponding modules by matching filenames.
+ * @param {Array<Record<string, any>>} doclets
+ * @param {Array<Record<string, any>>} modules
+ */
+function attachModuleSymbolsByFilename(doclets, modules) {
+    const symbols = {};
+
+    // build a lookup table
+    doclets.forEach(symbol => {
+        if (!symbols[symbol.meta.filename]) {
+            symbols[symbol.meta.filename] = [];
+        }
+
+        symbols[symbol.meta.filename].push(symbol);
+    });
+
+    modules.forEach(module => {
+        if (!symbols[module.meta.filename]) return;
+
+        symbols[module.meta.filename].forEach(symbol => {
+            symbol.memberof = module.longname;
+            symbol.scope = 'inner';
+            symbol.id = `~${symbol.id}`;
+            symbol.longname = symbol.memberof + symbol.id;
+            symbol.ancestors = getAncestorLinks(symbol);
+        });
+    });
+}
+
+/**
  * Prepares a tutorial for the navigation sidebar.
  * @param {object} tutorial
  * @param {object} parent
@@ -569,6 +599,22 @@ exports.publish = function (taffyData, opts, tutorials) {
         }
     }
 
+    var members = helper.getMembers(data);
+    members.tutorials = tutorials.children;
+
+    // Attach module symbols before generating links, so the links are built correctly
+    attachModuleSymbols(
+        find({ kind: ['class', 'function'], longname: { left: 'module:' } }),
+        members.modules
+    );
+
+    // Typedefs don't have a memberof property if they're defined in a module with no default export.
+    // This call associates typedefs to modules by matching their filenames
+    attachModuleSymbolsByFilename(
+        find({ kind: ['typedef'], memberof: { isUndefined: true } }),
+        members.modules
+    );
+
     if (sourceFilePaths.length) {
         sourceFiles = shortenPaths(sourceFiles, path.commonPrefix(sourceFilePaths));
     }
@@ -619,9 +665,6 @@ exports.publish = function (taffyData, opts, tutorials) {
         }
     });
 
-    var members = helper.getMembers(data);
-    members.tutorials = tutorials.children;
-
     // add template helpers
     view.find = find;
     view.linkto = linkto;
@@ -631,12 +674,8 @@ exports.publish = function (taffyData, opts, tutorials) {
     view.htmlsafe = htmlsafe;
     view.members = members; //@davidshimjs: To make navigation for customizing
 
-    // once for all
+    // This needs to be done after attaching module symbols, so they're included in the nav
     view.nav = buildNav(members, conf);
-    attachModuleSymbols(
-        find({ kind: ['class', 'function'], longname: { left: 'module:' } }),
-        members.modules
-    );
 
     // only output pretty-printed source files if requested; do this before generating any other
     // pages, so the other pages can link to the source files
