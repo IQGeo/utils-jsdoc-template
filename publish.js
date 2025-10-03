@@ -393,6 +393,7 @@ function buildNav(members, conf) {
                 longname: v.longname,
                 prettyname: getPrettyName(v),
                 name: v.name,
+                url: helper.longnameToUrl[v.longname],
                 module: find({
                     kind: 'module',
                     longname: v.memberof
@@ -400,20 +401,53 @@ function buildNav(members, conf) {
                 members: find({
                     kind: 'member',
                     memberof: v.longname
+                }).map(function(member) {
+                    return {
+                        longname: member.longname,
+                        name: member.name,
+                        url: helper.longnameToUrl[member.longname],
+                        inherited: member.inherited,
+                        inherits: member.inherits,
+                        deprecated: member.deprecated
+                    };
                 }),
                 methods: find({
                     kind: 'function',
                     memberof: v.longname
+                }).map(function(method) {
+                    return {
+                        longname: method.longname,
+                        name: method.name,
+                        url: helper.longnameToUrl[method.longname],
+                        inherited: method.inherited,
+                        inherits: method.inherits,
+                        deprecated: method.deprecated
+                    };
                 }),
                 typedefs: find({
                     kind: 'typedef',
                     memberof: v.longname
+                }).map(function(typedef) {
+                    return {
+                        longname: typedef.longname,
+                        name: typedef.name,
+                        url: helper.longnameToUrl[typedef.longname]
+                    };
                 }),
                 fires: v.fires,
                 events: find({
                     kind: 'event',
                     memberof: v.longname
-                })
+                }).map(function(event) {
+                    return {
+                        longname: event.longname,
+                        name: event.name,
+                        url: helper.longnameToUrl[event.longname],
+                        inherited: event.inherited,
+                        inherits: event.inherits
+                    };
+                }),
+                deprecated: v.deprecated
             });
         }
     });
@@ -443,11 +477,45 @@ function buildNav(members, conf) {
                 longname: v.longname,
                 prettyname: getPrettyName(v),
                 name: v.name,
-                members: members,
-                methods: methods,
-                typedefs: typedefs,
+                url: helper.longnameToUrl[v.longname],
+                members: members.map(function(member) {
+                    return {
+                        longname: member.longname,
+                        name: member.name,
+                        url: helper.longnameToUrl[member.longname],
+                        inherited: member.inherited,
+                        inherits: member.inherits,
+                        deprecated: member.deprecated
+                    };
+                }),
+                methods: methods.map(function(method) {
+                    return {
+                        longname: method.longname,
+                        name: method.name,
+                        url: helper.longnameToUrl[method.longname],
+                        inherited: method.inherited,
+                        inherits: method.inherits,
+                        deprecated: method.deprecated
+                    };
+                }),
+                typedefs: typedefs.map(function(typedef) {
+                    return {
+                        longname: typedef.longname,
+                        name: typedef.name,
+                        url: helper.longnameToUrl[typedef.longname]
+                    };
+                }),
                 fires: v.fires,
-                events: events
+                events: events.map(function(event) {
+                    return {
+                        longname: event.longname,
+                        name: event.name,
+                        url: helper.longnameToUrl[event.longname],
+                        inherited: event.inherited,
+                        inherits: event.inherits
+                    };
+                }),
+                deprecated: v.deprecated
             });
         }
     });
@@ -676,6 +744,14 @@ exports.publish = function (taffyData, opts, tutorials) {
 
     // This needs to be done after attaching module symbols, so they're included in the nav
     view.nav = buildNav(members, conf);
+
+    // Generate navigation.json file for shared navigation
+    var navData = {
+        nav: view.nav,
+        applicationName: env.conf.templates.applicationName || 'Documentation'
+    };
+    var navPath = path.join(outdir, 'navigation.json');
+    fs.writeFileSync(navPath, JSON.stringify(navData, null, 2), 'utf8');
 
     // only output pretty-printed source files if requested; do this before generating any other
     // pages, so the other pages can link to the source files
